@@ -3,11 +3,13 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from assignment.settings import BASE_DIR
+from django.shortcuts import render, redirect
+from django.core.files.storage import FileSystemStorage
 import os
 import json
 import requests
 import uuid
-import time
+
 import re
 from zipfile import ZipFile
 from os.path import basename
@@ -35,8 +37,12 @@ class ReceiveURL(View):
                 # Generate hash and send it with the response
                 hash = str(uuid.uuid4())
                 try:
+                    # Download media and compress it, then store data to be passed on to other views
                     download_list_and_zip_it(url_list, hash)
-                    return HttpResponse("Success!")
+                    request.session['status'] = 'in-progress'
+                    request.session['hash'] = hash
+                    return HttpResponse('''{"archive_hash": "%s"}''' % request.session['hash'])
+
                 except Exception as err:
                     raise err
 
@@ -94,18 +100,44 @@ def download_list_and_zip_it(url_list, hash):
     return True
 
 
+@csrf_exempt
+def upload(request):
+    context = {}
+    if request.method == "POST":
+        uploaded_file = request.FILES['document']
+        fs = FileSystemStorage()
+        filename = fs.save(uploaded_file.name, uploaded_file)
+        context["url"] = fs.url(filename)
+
+        # carry data along to Check Status View
+        request.session["url"] = fs.url(filename)
+        request.session["status"] = 'completed'
+        return redirect('check_status')
+    return render(request, 'upload.html', context)
+
+
+class CheckStatus(View):
+    def get(self, request):
+        if 'status' in request.session.keys():
+            if request.session['status'] == 'in-progress':
+                return HttpResponse('''{"status": "%s"}''' % request.session['status'])
+            if request.session['status'] == 'completed' and 'hash' in request.session.keys():
+                return redirect('send_archive', hash=request.session['hash'])
+        return HttpResponse("No files queued.")
+
+
 class SendArchive(View):
-    def get(self, request, hash=''):
-        # check if hash has been processed
-        # yes? -> send files
-        # no? --> tell them to wait
-        content = ''
-
-        def myfunc(hash):
-            self.content = {"status": "in-progress"}
-            return self.content
-
-        if myfunc(hash):
-            return HttpResponseRedirect(f'{hash}/', content=content)
-
-        return HttpResponse('ok, here is your file or not okay and gtfo.')
+    def get(self, request, hash):
+        """If the job is finished, display data and clear session. If not, display status. Else -> Notify that hash
+        has expired or something went wrong."""
+        if 'status' in request.session.keys():
+            if request.session['status'] == 'completed':
+                url = request.session['url']
+                print(url)
+                for key in list(request.session.keys()):
+                    if not key.startswith("_"):  # Safer than session.flush(), won't log off the user.
+                        del request.session[key]
+                return HttpResponse('''{"status": "completed","url": "%s"''' % url)
+            if request.session['status'] == 'in-progress':
+                return HttpResponse('''{"status": "%s" }''' % request.session['status'])
+        return HttpResponse('Hash invalid.')
