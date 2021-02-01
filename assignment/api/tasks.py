@@ -53,6 +53,7 @@ def download(url_list, hash):
     """
     try:
         # initiate in-memory-file-like-object(our archive)
+
         in_memory_archive = io.BytesIO()
 
         with ZipFile(in_memory_archive, 'a') as zf:
@@ -70,7 +71,7 @@ def download(url_list, hash):
         fs = FileSystemStorage()
         in_memory_archive.flush()
         fname = fs.save(hash + '.zip', in_memory_archive)
-        url = "http://localhost:8000/%s" % fs.url(fname)
+        url = "http://localhost:8000" + fs.url(fname)
         return url
 
     except Exception as e:
