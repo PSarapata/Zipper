@@ -1,14 +1,18 @@
 """This is what I tried at first, might help when trying to understand my thought process.
 Output was a local copy of downloaded files, stored in a folder named as hash. Then, ZipFile was called on this
 folder and user ended up with sort of a 'clone'. Inefficient, therefore I started digging and found a better way."""
+import shutil
 from os.path import basename
 from zipfile import ZipFile
 import re
 import os
+
+import requests
+
 from assignment.settings import BASE_DIR
 
 
-def download_list_and_zip_it(url_list, hash, chunk_size=256):
+def download_list_and_zip_it(url_list, hash, chunk_size=512):
     def getFilename_fromCd(cd):
         """
         Get filename from content-disposition
@@ -41,7 +45,7 @@ def download_list_and_zip_it(url_list, hash, chunk_size=256):
             print('Path is empty, something went wrong.')
             return False
 
-    directory = 'api/databank/{}'.format(hash)
+    directory = 'api/media/{}'.format(hash)
     parent_dir = BASE_DIR
     path = os.path.join(parent_dir, directory)
     os.mkdir(path)
@@ -58,4 +62,5 @@ def download_list_and_zip_it(url_list, hash, chunk_size=256):
     print('Download completed!')
     print("You should see your data here: {} !".format(path))
     zip_it_buddy(path)
+    shutil.rmtree(path)
     return True

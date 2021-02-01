@@ -1,12 +1,12 @@
 from django.urls import path
-from api.views import TestView, ReceiveURL, SendArchive, upload, download, CheckStatus
+from api.views import ReceiveHash, CheckStatus, download, TestView
 
 
 urlpatterns = [
-    path('', TestView.as_view(), name='testing'),
-    path('create/', ReceiveURL.as_view(), name='receive_url'),
-    path('status/', CheckStatus.as_view(), name='check_status'),
-    path('upload/', upload, name='upload'),
+    path('test/', TestView.as_view(), name='test'),
+    path('create/', ReceiveHash.as_view(), name='receive_url'),
+    # path('status/', CheckStatus.as_view(), name='check_status'), ------> obsolete
+    # path('upload/', upload, name='upload'), -----> obsolete
     path('download/<slug:hash>/', download, name='download'),
-    path('status/<slug:hash>/', SendArchive.as_view(), name='send_archive'),
+    path('status/<slug:hash>/', CheckStatus.as_view(), name='send_archive'),
 ]
