@@ -30,8 +30,7 @@ def initiate_download(self, **kwargs):
         # function to generate, upload the archive to django filestorage, then return archive's url
         download_url = download(url_list=url_list, hash=hash)
         # get related result from the db and update the status.
-        success_result = {"status": "completed",
-                          "url": download_url}
+        success_result = {"status": "completed", "url": download_url}
         success_json_result = json.dumps(success_result, indent=4)
         async_result = AsyncResults.objects.get(task_id=hash)
         async_result.result = success_json_result
@@ -70,8 +69,9 @@ def download(url_list, hash):
 
         fs = FileSystemStorage()
         in_memory_archive.flush()
-        fname = fs.save(hash + '.zip', in_memory_archive)
-        url = 'http://localhost:8000/api/archive/get%s' % fs.url(fname)
+        fs.save(hash + '.zip', in_memory_archive)
+        #  Warning: hardcoded, since I was receiving duplicate paths - probably after fiddling with DEBUG settings.
+        url = 'http://localhost:8000/api/archive/get/%s.zip/' % hash
         return url
 
     except Exception as e:
