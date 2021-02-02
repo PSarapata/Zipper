@@ -28,6 +28,7 @@ that would be considerably shorter, but like I said - I don't want to mess thing
 - [x] **Predefined webhook (another server) being called when archive generation
       job is finished.** - I used a low-code solution IFTT to get a notification on my smartphone whenever the 
       download is finished. (see tasks.py)
+      Proof: ![Proof](https://ibb.co/Mgv26hv)
   
 - [x] **The archive generation succeeds even in case of network errors and is
       capable of resuming the downloads.** - Checked with a very short network disconnection, the celery worker 
