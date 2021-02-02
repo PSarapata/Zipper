@@ -19,6 +19,7 @@ from django.utils.decorators import method_decorator
 
 from api.tasks import initiate_download
 from api.models import AsyncResults
+from datetime import datetime, timedelta
 
 import json
 import uuid
@@ -42,9 +43,10 @@ class ReceiveHash(View):
                 # Generate hash and send it with the response
                 hash = str(uuid.uuid4())
                 try:
-                    # start the download task
+                    # start the download task, limit execution time to 12 hours...
                     print("Initiating Celery task...")
-                    task = initiate_download.delay(url_list=url_list, hash=hash)
+                    task = initiate_download.delay(url_list=url_list, hash=hash, expires=datetime.now() + timedelta(
+                        hours=12))
                     print("Task %s initiated..." % task.task_id)
                     # send status with the response
                     resp = {"active_hash": "%s" % hash}

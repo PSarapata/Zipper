@@ -8,7 +8,7 @@ from celery import shared_task
 from django.core.files.storage import FileSystemStorage
 
 from api.models import AsyncResults
-
+from datetime import datetime, timedelta
 
 # app = Celery('tasks', broker='pyamqp://guest@localhost/')
 
@@ -35,7 +35,8 @@ def initiate_download(self, **kwargs):
         async_result = AsyncResults.objects.get(task_id=hash)
         async_result.result = success_json_result
         async_result.save()
-        send_notification(url=download_url)
+        # call a webhook but apply execution time limit of 1 hour.
+        send_notification.delay(url=download_url, expires=datetime.now() + timedelta(hours=1), ignore_result=True)
     except:
         # save error messages with status code 500
         result = {"status": 500,
