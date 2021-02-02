@@ -10,7 +10,7 @@ from django.core.files.storage import FileSystemStorage
 from api.models import AsyncResults
 
 
-# app = Celery('tasks', broker='pyamqp://guest@localhost//')
+# app = Celery('tasks', broker='pyamqp://guest@localhost/')
 
 
 # bind the task to itself to ensure that task results get associated with the correct task id
@@ -71,7 +71,7 @@ def download(url_list, hash):
         fs = FileSystemStorage()
         in_memory_archive.flush()
         fname = fs.save(hash + '.zip', in_memory_archive)
-        url = "http://localhost:8000" + fs.url(fname)
+        url = 'http://localhost:8000/api/archive/get%s' % fs.url(fname)
         return url
 
     except Exception as e:
