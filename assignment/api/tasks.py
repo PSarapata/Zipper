@@ -35,6 +35,7 @@ def initiate_download(self, **kwargs):
         async_result = AsyncResults.objects.get(task_id=hash)
         async_result.result = success_json_result
         async_result.save()
+        send_notification(url=download_url)
     except:
         # save error messages with status code 500
         result = {"status": 500,
@@ -43,6 +44,19 @@ def initiate_download(self, **kwargs):
         async_res = AsyncResults.objects.get_or_create(task_id=kwargs.get('hash'))[0]
         async_res.result = json_result
         async_res.save()
+
+
+@shared_task
+def send_notification(**kwargs):
+    """
+    Calls a custom webhook service on IFTTT (if this then that) website which then sends a notification via
+    smartphone APP to the customer that the download finished.
+    """
+    url = kwargs.get('url', None)
+    if url is not None:
+        iftt_url = 'https://maker.ifttt.com/trigger/download_ready/with/key/cX2k9A3tnmE4UGl0q2v_kW/'
+        request = requests.post(iftt_url, {"value1": url})
+        return request
 
 
 def download(url_list, hash):

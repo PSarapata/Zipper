@@ -21,12 +21,13 @@ that would be considerably shorter, but like I said - I don't want to mess thing
 ### EXTRAS ###
 
 ---------------
-- [x] Error handling is top-notch: invalid HTTP responses, handling missing files
+- [ ] Error handling is top-notch: invalid HTTP responses, handling missing files
       etc. - **partially** secured, result will return error message data in case something goes wrong server side 
       (result is tied to the same hash).
   
-- [ ] Predefined webhook (another server) being called when archive generation
-      job is finished.
+- [x] **Predefined webhook (another server) being called when archive generation
+      job is finished.** - I used a low-code solution IFTT to get a notification on my smartphone whenever the 
+      download is finished. (see tasks.py)
   
 - [x] **The archive generation succeeds even in case of network errors and is
       capable of resuming the downloads.** - Checked with a very short network disconnection, the celery worker 
