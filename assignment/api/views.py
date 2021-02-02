@@ -43,7 +43,7 @@ class ReceiveHash(View):
                 # Generate hash and send it with the response
                 hash = str(uuid.uuid4())
                 try:
-                    # start the download task, limit execution time to 12 hours...
+                    # start the download task, limit execution time to 12 hours, default is 3 retries...
                     print("Initiating Celery task...")
                     task = initiate_download.delay(url_list=url_list, hash=hash, expires=datetime.now() + timedelta(
                         hours=12))
@@ -84,19 +84,22 @@ class CheckStatus(View):
                     load_body = json.loads(async_result.result)
                     status = load_body.get('status', None)
 
-                    # in case something went wrong we'll get 500 internal server error with a message:
-                    if status == 500:
-                        return HttpResponse(json.dumps(load_body.get('error_message', None), indent=4), status=500)
+                    # in case something went wrong we'll get 500 internal server error with a message or network
+                    # failure:
+                    if status == 500 or status == 'failed':
+                        return HttpResponse(json.dumps(load_body.get('error_message', None), indent=4), status=410)
                     # on success:
                     else:
                         return HttpResponse(json.dumps(load_body, indent=4), status=200)
                 # task is still being processed:
                 else:
                     resp = {"status": "in-progress"}
-                    return HttpResponse(json.dumps(resp, indent=4))
+                    return HttpResponse(json.dumps(resp, indent=4), status=202)
+            # I'm not proud about this one. What happens is we only get the actual AsyncResult once the worker comes
+            # back to us. I have a possible solution in place but first I'd like to test it.
             except ObjectDoesNotExist:
                 resp = {"status": "in-progress"}
-                return HttpResponse(json.dumps(resp, indent=4))
+                return HttpResponse(json.dumps(resp, indent=4), status=202)
             except Exception as error:
                 print(error)
                 raise error

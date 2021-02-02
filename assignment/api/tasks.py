@@ -2,6 +2,7 @@ import io
 import sys
 import json
 from zipfile import ZipFile
+from kombu.exceptions import OperationalError
 
 import requests
 from celery import shared_task
@@ -37,6 +38,13 @@ def initiate_download(self, **kwargs):
         async_result.save()
         # call a webhook but apply execution time limit of 1 hour.
         send_notification.delay(url=download_url, expires=datetime.now() + timedelta(hours=1), ignore_result=True)
+    # in case our task fails due to connection error lasting longer than 3 retries
+    except OperationalError:
+        error_result = json.dumps({"status": "failed", "error_message": 'Potential Network Error' + repr(
+            OperationalError)}, indent=4)
+        async_result = AsyncResults.objects.get_or_create(task_id=kwargs.get('hash'))[0]
+        async_result.result = error_result
+        async_result.save()
     except:
         # save error messages with status code 500
         result = {"status": 500,
