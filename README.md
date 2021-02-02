@@ -16,3 +16,23 @@ Coding Assignment
 **If you follow these steps it should be good to go, celery will start the task and give you the hash. 
 Download is currently synchronous and takes on average 30 seconds for a 14 MB archive. If we made it asynchronous 
 that would be considerably shorter, but like I said - I don't want to mess things up playing with it too much.**
+
+
+### EXTRAS ###
+
+---------------
+- [x] Error handling is top-notch: invalid HTTP responses, handling missing files
+      etc. - **partially** secured, result will return error message data in case something goes wrong server side 
+      (result is tied to the same hash).
+  
+- [ ] Predefined webhook (another server) being called when archive generation
+      job is finished.
+  
+- [x] **The archive generation succeeds even in case of network errors and is
+      capable of resuming the downloads.** - Checked with a very short network disconnection, the celery worker 
+      resumed right after the network switched back on.
+
+- [x] **The archive generation succeeds even if the API server is being restarted
+      during the job run.** - checked, works. Once celery worker intercepts the task, 
+      it is then handled independently.
+
