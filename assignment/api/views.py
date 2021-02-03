@@ -9,9 +9,9 @@ answers on the web and to finally reach something I could use (and understand) t
 of in-memory-data flow is also quite new to me, but definitely what I struggled with the most was the use of Celery /
 ansynchronizing the request-response communication between endpoints.
 """
+
 import re
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt

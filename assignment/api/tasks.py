@@ -1,6 +1,8 @@
 import io
 import sys
 import json
+import aiohttp
+import asyncio
 from zipfile import ZipFile
 from kombu.exceptions import OperationalError
 
@@ -80,6 +82,9 @@ def download(url_list, hash):
             # read contents of each media (any) files from the urls
             for url in url_list:
                 r = requests.get(url, allow_redirects=True)
+                # handling missing files
+                if r.status_code == 404:
+                    pass
                 filename = url.split('/')[-1]
                 zf.writestr(filename, r.content)
 
@@ -99,3 +104,46 @@ def download(url_list, hash):
         print(filename)
         print(e)
         raise e
+
+
+async def async_download(url_list, hash):
+    """
+    Under development. In theory should shorten the execution time and handle missing
+    files better.
+    """
+
+    async def download_single_file(url, session, zf):
+        async with session.get(url) as response:
+            resp = response.read()
+            await resp
+            filename = url.split('/')[-1]
+            return await zf.writestr(filename, resp)
+
+    async def multidownload(url_list, zf):
+        async with aiohttp.ClientSession() as session:
+            for url in url_list:
+                ready_file = await download_single_file(url, session, zf)
+                return ready_file
+
+    try:
+        in_memory_archive = io.BytesIO()
+
+        with ZipFile(in_memory_archive, 'a') as zf:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(multidownload(url_list=url_list, zf=zf))
+
+        # fix for Linux zip files read in Windows
+        for file in zf.filelist:
+            file.create_system = 0
+        zf.close()
+
+        fs = FileSystemStorage()
+        in_memory_archive.flush()
+        await fs.save(hash + '.zip', in_memory_archive)
+
+        url = 'http://localhost:8000/api/archive/get/%s.zip/' % hash
+        return await url
+
+    except Exception as exc:
+        print(exc)
+        raise exc
