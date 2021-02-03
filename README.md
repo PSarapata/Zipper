@@ -1,4 +1,4 @@
-# Zipper
+# Zipper #
 Coding Assignment
 
 
@@ -17,6 +17,8 @@ Coding Assignment
 Download is currently synchronous and takes on average 30 seconds for a 14 MB archive. If we made it asynchronous 
 that would be considerably shorter, but like I said - I don't want to mess things up playing with it too much.**
 
+## VIDEO PRESENTATION ##
+[![Watch the video](https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/63118/zipper-clipart-md.png)](https://youtu.be/BTh3lwkaJfE)
 
 ### EXTRAS ###
 

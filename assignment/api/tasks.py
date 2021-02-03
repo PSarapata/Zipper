@@ -22,12 +22,9 @@ def initiate_download(self, **kwargs):
     download URL to AsyncResults model once task finishes running
     """
     try:
-        # create AsyncResult:
+        # update AsyncResult:
         url_list = kwargs.get('url_list', None)
         hash = kwargs.get('hash', None)
-        initial_result = {"status": "in-progress"}
-        initial_json_result = json.dumps(initial_result, indent=4)
-        AsyncResults.objects.create(task_id=hash, result=initial_json_result)
         # function to generate, upload the archive to django filestorage, then return archive's url
         download_url = download(url_list=url_list, hash=hash)
         # get related result from the db and update the status.
@@ -42,6 +39,7 @@ def initiate_download(self, **kwargs):
     except OperationalError:
         error_result = json.dumps({"status": "failed", "error_message": 'Potential Network Error' + repr(
             OperationalError)}, indent=4)
+        # this and the below get_or_create will cover us in case the task was not created before the task started.
         async_result = AsyncResults.objects.get_or_create(task_id=kwargs.get('hash'))[0]
         async_result.result = error_result
         async_result.save()

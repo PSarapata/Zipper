@@ -43,6 +43,8 @@ class ReceiveHash(View):
                 # Generate hash and send it with the response
                 hash = str(uuid.uuid4())
                 try:
+                    # initialize task result, it will get updated once Celery worker returns.
+                    AsyncResults.objects.create(task_id=hash, result=json.dumps({"status": "in-progress"}))
                     # start the download task, limit execution time to 12 hours, default is 3 retries...
                     print("Initiating Celery task...")
                     task = initiate_download.delay(url_list=url_list, hash=hash, expires=datetime.now() + timedelta(
@@ -52,7 +54,8 @@ class ReceiveHash(View):
                     resp = {"active_hash": "%s" % hash}
                     response = HttpResponse(json.dumps(resp, indent=4), status=202)
                     return response
-
+                except initiate_download.OperationalError as opErr:
+                    print("task raised operational error: %r" % repr(opErr))
                 except Exception as err:
                     raise err
 
@@ -88,18 +91,14 @@ class CheckStatus(View):
                     # failure:
                     if status == 500 or status == 'failed':
                         return HttpResponse(json.dumps(load_body.get('error_message', None), indent=4), status=410)
+                    # still processing...
+                    elif status == "in-progress":
+                        resp = {"status": "in-progress"}
+                        return HttpResponse(json.dumps(resp, indent=4), status=202)
                     # on success:
                     else:
                         return HttpResponse(json.dumps(load_body, indent=4), status=200)
-                # task is still being processed:
-                else:
-                    resp = {"status": "in-progress"}
-                    return HttpResponse(json.dumps(resp, indent=4), status=202)
-            # I'm not proud about this one. What happens is we only get the actual AsyncResult once the worker comes
-            # back to us. I have a possible solution in place but first I'd like to test it.
-            except ObjectDoesNotExist:
-                resp = {"status": "in-progress"}
-                return HttpResponse(json.dumps(resp, indent=4), status=202)
+
             except Exception as error:
                 print(error)
                 raise error
